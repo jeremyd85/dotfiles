@@ -1,0 +1,9 @@
+alias gs='git status';
+alias gap='git add -p';
+alias gs='git status -s';
+alias gc='git commit';
+alias gcam='git commit -a -m';
+alias gch='git checkout';
+alias gchb='git checkout -b';
+alias gchm='git checkout master';
+alias gl='git --no-pager log --oneline --graph --decorate -n 10';
