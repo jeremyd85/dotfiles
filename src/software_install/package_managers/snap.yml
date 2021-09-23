@@ -1,0 +1,5 @@
+software:
+  flutter:
+    name: "flutter"
+  slack:
+    name: "slack"

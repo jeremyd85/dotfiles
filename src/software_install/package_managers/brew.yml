@@ -1,0 +1,27 @@
+software:
+  sqlite:
+    name: "sqlite"
+  zsh:
+    name: "zsh"
+  pyenv:
+    name: "pyenv"
+  pyenv-virtualenvwrapper:
+    name: "pyenv-virtualenvwrapper"
+  pyenv-virtualenv:
+    name: "pyenv-virtualenv"
+  direnv:
+    name: "direnv"
+  k8s-cli:
+    name: "kubernetes-cli"
+  node:
+    name: "node"
+  postgresql:
+    name: "postgresql"
+  tmux:
+    name: "tmux"
+  htop:
+    name: "htop"
+  ffmpeg:
+    name: "ffmpeg"
+  openjdk:
+    naem: "openjdk"

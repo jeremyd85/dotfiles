@@ -1,0 +1,43 @@
+software:
+  vscode:
+    name: "visual-studio-code"
+  firefox:
+    name: "firefox"
+  1password:
+    name: "1password"
+  atom:
+    name: "atom"
+  notion:
+    name: "notion"
+  teams:
+    name: "microsoft-teams"
+  outlook:
+    name: "microsoft-outlook"
+  spotify:
+    name: "spotify"
+  jetbrains-toolbox:
+    name: "jetbrains-toolbox"
+  intellij:
+    name: "intellij-idea"
+  word:
+    name: "microsoft-word"
+  excel:
+    name: "microsoft-excel"
+  inkscape:
+    name: "inkscape"
+  discord:
+    name: "discord"
+  bitwarden:
+    name: "bitwarden"
+  postman:
+    name: "postman"
+  zoom:
+    name: "zoom"
+  obs:
+    name: "obs"
+  slack:
+    name: "slack"
+  minecraft:
+    name: "minecraft"
+  steam:
+    name: "steam"
