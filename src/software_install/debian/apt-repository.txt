@@ -1,2 +1,0 @@
-ppa:inkscape.dev/stable
-ppa:lutris-team/lutris
