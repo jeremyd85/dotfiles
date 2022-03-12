@@ -1,0 +1,17 @@
+#!/usr/bin/python3
+import subprocess
+import re
+
+def start_autofish(window_name):
+    right_click = '3'
+    window_call = subprocess.run(['xwininfo', '-name', window_name], stdout=subprocess.PIPE, text=True, check=True)
+    match = re.match(r"^\nxwininfo: Window id: (\w+)", window_call.stdout)
+    if match:
+        window_id = match.group(1)
+        subprocess.run(['xdotool', 'mousedown', '--window', window_id, right_click])
+
+        
+
+if __name__ == '__main__':
+    minecraft_window_name = 'Minecraft 1.15.2 - Multiplayer (3rd-party)'
+    start_autofish(minecraft_window_name)
