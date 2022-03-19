@@ -1,0 +1,15 @@
+com.spotify.Client
+org.videolan.VLC
+org.gimp.GIMP
+org.inkscape.Inkscape
+com.bitwarden.desktop
+org.blender.Blender
+org.wireshark.Wireshark
+org.chromium.Chromium
+com.microsoft.Teams
+us.zoom.Zoom
+com.discordapp.Discord
+com.mojang.Minecraft
+com.jetbrains.IntelliJ-IDEA-Ultimate
+com.jetbrains.PyCharm-Professional
+com.jetbrains.CLion
