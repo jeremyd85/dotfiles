@@ -1,0 +1,16 @@
+node
+go
+htop
+openjdk
+sqlite
+pyenv
+direnv
+ffmpeg
+espeak
+kubectl
+postgresql
+tmux
+wget
+zsh
+docker
+cmake
