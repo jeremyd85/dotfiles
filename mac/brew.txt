@@ -2,8 +2,10 @@ node
 go
 htop
 openjdk
+sqlite3
 sqlite
 pyenv
+pyenv-virtualenv
 direnv
 ffmpeg
 espeak
@@ -12,5 +14,12 @@ postgresql
 tmux
 wget
 zsh
-docker
 cmake
+jq
+rustup-init
+openssl
+readline
+xz
+zlib
+dnsmasq
+libmemcached

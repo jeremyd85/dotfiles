@@ -1,0 +1,68 @@
+#!/bin/bash
+
+temp_dir=$(mktemp -d motel_dumpXXXXXXXXXX)
+temp_dir="$PWD/$temp_dir"
+original_env=$PYENV_VERSION
+unset PYENV_VERSION
+export PYENV_VERSION=motel
+
+
+function clean() {
+  rm -rf "$temp_dir"
+  docker-compose stop
+  unset PYENV_VERSION
+  export PYENV_VERSION=$original_env
+};
+
+trap clean EXIT;
+
+while getopts ":l" option ; do
+  case $option in
+    l) LOCAL_ONLY="true" && echo "local";;
+    *) echo "Invalid option";;
+  esac
+done
+
+
+dump_filename="motel.dump"
+motel_host="motel@bibleimport01.yv-api-production.us-central1-b.thewardro.be"
+server_dump_path="/home/motel/temp/$dump_filename"
+local_dump_path="$temp_dir/$dump_filename"
+local_motel_path="$HOME/workspace/motel.thewardro.be/"
+server_data_path="/data/incoming"
+local_data_path="$HOME/workspace/local_data"
+server_dbl_audio_bundles="/data/bundles/audio_bundles-4"
+local_dbl_audio_bundles="$local_data_path/bundles/audio_bundles-4"
+
+
+if [ "$LOCAL_ONLY" != "true" ] ; then
+  echo "Running pg_dump on Motel server:"
+  ## shellcheck disable=SC2029
+  ssh $motel_host "pg_dump -aFc motel > $server_dump_path;"
+
+  echo "Copying the dump from the server to the current machine:"
+  scp "$motel_host:$server_dump_path" "$temp_dir"
+fi
+
+if [[ -d "$local_motel_path" ]] ; then
+  echo "Starting local database:"
+  cd "$local_motel_path" || exit
+  docker-compose down --rmi all
+  docker-compose up -d
+  sleep 1.5
+
+  echo "Resetting local database:"
+  fab dev_migrate:reset=True || true;
+  fab dev_migrate
+fi
+
+if [ "$LOCAL_ONLY" != "true" ] ; then
+  echo "Migrating new data to local database:"
+  pg_restore "$local_dump_path" -d motel -h localhost -p 5432 -U dev
+
+  echo "Syncing metadata files with local system:"
+  rsync -avPm --include="*/" --include="metadata.json" --exclude="*" "$motel_host:$server_data_path" "$local_data_path"
+
+  echo "Syncing audio_bundles metadata.xml"
+  rsync -avPm --include="*/" --include="metadata.xml" --exclude="*" $motel_host:$server_dbl_audio_bundles "$local_dbl_audio_bundles"
+fi

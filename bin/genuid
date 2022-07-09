@@ -1,0 +1,31 @@
+#!/usr/bin/python3
+
+from argparse import ArgumentParser
+from time import time_ns
+from hashlib import md5
+
+
+def gen_uid(args):
+    data = args.type
+    data += args.term
+    if not args.constant:
+        data += str(time_ns())
+    md5_hash = md5(data.encode('utf-8')).hexdigest()
+    if args.length is not None:
+        return md5_hash[:args.length]
+    elif args.type in ['text', 'audio']:
+        return md5_hash[:16]
+    elif args.type in ['publisher']:
+        return md5_hash[:24]
+    return md5_hash
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser('Creates UIDs based on a term')
+    parser.add_argument('term', type=str, help='term to help generate the UID')
+    parser.add_argument('-t', '--type', choices=['text', 'audio', 'publisher'],
+                        help='type of UID to generate', default='text')
+    parser.add_argument('-l', '--length', type=int, required=False, help='override length of UID')
+    parser.add_argument('-c', '--constant', action='store_true', required=False,
+                        help='Produce the same UID given the same input')
+    print(gen_uid(parser.parse_args()))

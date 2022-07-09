@@ -1,26 +1,27 @@
 #!/usr/bin/python3
-from argparse import ArgumentParser
-import re
+import argparse
 from pathlib import Path
+import re
 
 
-if __name__ == '__main__':
-    parser = ArgumentParser(description='Rename USX files in max.')
-    parser.add_argument('files', nargs="+", help='Name of the USX files')
+def rename_files(directory: Path) -> None:
+    re_usx_file = re.compile(r".*[0-9]*([A-Z0-9]{3}.usx)")
+    if not directory.is_dir():
+        print(f"{directory} isn't a valid directory")
+        return
+    for file in directory.iterdir():
+        re_match = re_usx_file.match(str(file))
+        if re_match:
+            new_filepath = Path(file.parent, re_match.group(1))
+            file.rename(new_filepath)
+        else:
+            print(f"EXCLUDED: {file}")
+
+    return
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Rename USX files in directory")
+    parser.add_argument("directory", type=str)
     args = parser.parse_args()
-
-    renamed_count = 0
-    regex = re.compile(r"\d{1,3}(.{3}.usx)")
-    for file in args.files:
-        filepath = Path(file)
-        name = filepath.name
-        base = filepath.parent
-        match = regex.match(name)
-        if match:
-            out = match.group(1)
-            Path(file).rename(Path(base, out))
-            renamed_count += 1
-    print(f"Renamed {renamed_count} files")
-
-
-
+    rename_files(Path(args.directory))

@@ -1,0 +1,126 @@
+#!venv/bin/python3
+from argparse import ArgumentParser
+import urllib.parse
+import urllib.request
+import webbrowser
+import json
+from itertools import product
+import psycopg2
+import psycopg2.extras
+from typing import Optional, Dict
+import sys
+from pathlib import Path
+
+
+BASE_URL = 'https://motel.thewardro.be'
+PG_CONN = None
+
+def pg_connection():
+    global PG_CONN
+    if PG_CONN is None:
+        PG_CONN = psycopg2.connect(host="localhost", port="5432", database="motel", user="dev")
+    return PG_CONN
+
+
+def text_version(text_id: str = None, dbl_id: str = None) -> Optional[Dict]:
+    query = "SELECT id, dbl_id, abbreviation, local_abbreviation, language_tag, publisher_id, scope, local_title, title, source, source_filename FROM text_versions "
+    if text_id is not None:
+        query += "WHERE id=%(text_id)s"
+    elif dbl_id is not None:
+        query += "WHERE dbl_id=%(dbl_id)s"
+    else:
+        return None
+    with pg_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute(query, {"text_id": text_id, "dbl_id": dbl_id})
+            text = cursor.fetchone()
+            return dict(text) if text is not None else None
+
+
+def get_bible_id(dbl_id, category):
+    bible_type = 'text' if category == 't' else 'audio'
+    motel_url = BASE_URL + f'/adversity/get_versions?bible_type={bible_type}'
+    with urllib.request.urlopen(motel_url) as response:
+        data = json.loads(response.read())
+    if data:
+        matching_versions = filter(lambda v: v.get('dbl_id') == dbl_id, data.get('versions'))
+        matching_version = next(matching_versions)
+        if matching_version is not None:
+            return matching_version.get('id')
+    return None
+
+
+def bundle_dir_name_options(text) -> str:
+    if "dbl12" in text["source"]:
+        return ["bundles-3_2"]
+    elif "dbl" in text["source"]:
+        return ["bundles-4", "bundles-4-overrides"]
+    elif "yv3" in text["source"]:
+        return ["yv3-bundles-3.2"]
+    elif "yv2" in text["source"]:
+        return ["yv2-bundles-3.2"]
+    sys.exit("Unknown source: {}".format(text["source"]))
+
+
+def text_str(text):
+    names = bundle_dir_name_options(text)
+    source_filepaths = [str(Path('/data', 'bundles', name, text['source_filename'])) for name in names]
+
+    return '\n\n'.join([
+        f'ID:\n{text["id"]}',
+        f'DBL ID:\n{text["dbl_id"]}',
+        f'Title:\n{text["title"]}', 
+        f'Local Title:\n{text["local_title"]}',
+        f'Abbreviation:\n{text["abbreviation"]}',
+        f'Local Abbreviation:\n{text["local_abbreviation"]}',
+        f'Source Filepaths:\n{" or ".join(source_filepaths)}',
+        f'Scope:\n{text["scope"]}'
+        ])
+
+
+def open_page(option, term):
+    url_path = ''
+    if option == 'tm':
+        url_path += f'/versions/details?yvid={term}'
+    elif option == 'td':
+        # text_id = get_bible_id(term.strip(), category)
+        url_path += f'/?q={term.strip()}'
+    elif option == 'tf':
+        url_path += f'/?q={term}'
+    elif option == 'am':
+        url_path += f'/audio/details?audio_id={term}'
+    elif option == 'ad':
+        # audio_id = get_bible_id(term.strip(), category)
+        url_path += f'/audio?q={term.strip()}'
+    elif option == 'af':
+        url_path += f'/audio?q={term}'
+    url = BASE_URL + url_path
+    webbrowser.open(url)
+
+
+def open_terminal(option, term):
+    if option == 'tm':
+        text = text_version(text_id=term)
+        print(text_str(text))
+    if option == 'td':
+        text = text_version(dbl_id=term)
+        print(text_str(text))
+
+def main(args):
+    if args.browser:
+        open_page(args.search_choice, args.term)
+    else:
+        open_terminal(args.search_choice, args.term)
+
+
+
+if __name__ == '__main__':
+    search_options = ['m', 'd', 'f']
+    search_categories = ['t', 'a']
+    parser = ArgumentParser("Open to correct motel page")
+    parser.add_argument('search_choice', 
+                        choices=list(map(''.join, product(search_categories, search_options))))
+    parser.add_argument('term')
+    parser.add_argument('-b', '--browser', action='store_true')
+    args = parser.parse_args()
+    main(args)

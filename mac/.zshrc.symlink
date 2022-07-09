@@ -1,0 +1,60 @@
+autoload -Uz vcs_info
+
+# This is so that the git branch can be displayed in the prompt
+zstyle ':vcs_info:*' enable git svn
+zstyle ':vcs_info:git*' formats " (%b) "
+
+precmd() {
+    vcs_info
+    local color_user="78"
+    local color_path="38"
+    if [[ -z ${vcs_info_msg_0_} ]]; then
+        PROMPT="%F{$color_user}%n%f %F{$color_path}%~%f $ "
+    else
+        PROMPT="%F{$color_user}%n%f %F{$color_path}%~%f${vcs_info_msg_0_}$ "
+    fi
+    PROMPT="%B$PROMPT%b"
+}
+
+add_path() {
+    local new_path="$1"
+    if [ -d $new_path ] ; then
+        export PATH=$new_path:$PATH
+    else
+        echo "Failed to add path $new_path"
+    fi
+}
+
+cl() {
+    cd "$@" && ls -G
+}
+
+# Remove MOTD
+test -f $HOME/.hushlogin || touch $HOME/.hushlogin
+
+# pyenv
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+# direnv
+eval "$(direnv hook zsh)"
+
+# git aliases
+alias gs='git status -s'
+alias gap='git add -p'
+alias gc='git commit'
+alias gch='git checkout'
+alias gl='git --no-pager log --oneline --graph --decorate -n 10'
+
+# ls aliases
+alias ls='ls -G'
+alias l='ls'
+alias la='ls -AG'
+alias ll='ls -AGl'
+alias lt='du -sh * | sort -h'
+alias reseter='reset && zsh'
+
+add_path $HOME/bin
+export CODE_WORKSPACE_DIR="$HOME/workspace"
+export CODE_DIR="$HOME/code"
+export DUO_PASSCODE="push"

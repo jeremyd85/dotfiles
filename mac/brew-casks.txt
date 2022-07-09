@@ -1,5 +1,4 @@
 visual-studio-code
-warp
 steam
 google-cloud-sdk
 gimp
@@ -24,8 +23,9 @@ discord
 dropbox
 gog-galaxy
 inkscape
-insomnia
 keybase
 meld
 slack
 zoom
+docker
+postman

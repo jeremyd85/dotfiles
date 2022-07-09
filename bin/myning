@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
+prev_dir=`pwd`
+trap "cd $prev_dir" EXIT
+
+if [ -d $CODE_DIR/myning ] ; then
+    cd $CODE_DIR/myning && make play
+fi

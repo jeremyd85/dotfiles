@@ -1,0 +1,138 @@
+#!venv/bin/python3
+
+from argparse import ArgumentParser
+from pathlib import Path
+import os
+from typing import Optional, Dict
+import psycopg2
+import psycopg2.extras
+import subprocess
+from zipfile import ZipFile
+import sys
+
+
+PG_CONN = None
+if (CODE_WORKSPACE_DIR := os.getenv("CODE_WORKSPACE_DIR")) is not None:
+    CODE_WORKSPACE_DIR = Path(CODE_WORKSPACE_DIR)
+else:
+    sys.exit("CODE_WORKSPACE_PATH not set")
+ZIPPED_BUNDLES_DIR: Path = Path(CODE_WORKSPACE_DIR, "local_data", "bundles")
+UNZIPPED_BUNDLES_DIR: Path = Path(CODE_WORKSPACE_DIR, "local_data", "unzip_bundles")
+
+
+def pg_connection():
+    global PG_CONN
+    if PG_CONN is None:
+        PG_CONN = psycopg2.connect(host="localhost", port="5432", database="motel", user="dev")
+    return PG_CONN
+
+
+def text_version(text_id: str = None, dbl_id: str = None) -> Optional[Dict]:
+    query = "SELECT id, dbl_id, source, source_filename FROM text_versions "
+    if text_id is not None:
+        query += "WHERE id=%(text_id)s"
+    elif dbl_id is not None:
+        query += "WHERE dbl_id=%(dbl_id)s"
+    else:
+        return None
+    with pg_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute(query, {"text_id": text_id, "dbl_id": dbl_id})
+            text = cursor.fetchone()
+            return dict(text) if text is not None else None
+
+
+def bundle_dir_name_options(text) -> str:
+    if "dbl12" in text["source"]:
+        return ["bundles-3_2"]
+    elif "dbl" in text["source"]:
+        return ["bundles-4", "bundles-4-overrides"]
+    elif "yv3" in text["source"]:
+        return ["yv3-bundles-3.2"]
+    elif "yv2" in text["source"]:
+        return ["yv2-bundles-3.2"]
+    sys.exit("Unknown source: {}".format(text["source"]))
+
+
+def open_with_editor(filepath, editor):
+    if not Path(filepath).exists():
+        raise Exception("{} does not exist".format(filepath))
+    result = subprocess.run(
+        [editor, filepath]
+    )
+    result.check_returncode()
+
+
+def copy_from_remote(source, destination) -> bool:
+    bi_user = "motel"
+    bi_host = "bibleimport01.yv-api-production.us-central1-b.thewardro.be"
+    result = subprocess.run(["scp", 
+        "{}@{}:{}".format(bi_user, bi_host, source), 
+        destination])
+    return result.returncode == 0
+    
+
+def get_usx_zip(text, force) -> Optional[Path]:
+    global ZIPPED_BUNDLES_DIR
+    names = bundle_dir_name_options(text)
+    for name in names:
+        bundle_dir = Path(ZIPPED_BUNDLES_DIR, name)
+        if not bundle_dir.exists():
+            os.makedirs(bundle_dir, exist_ok=True)
+        bundle_path = Path(bundle_dir, text["source_filename"])
+        if not bundle_path.exists() or force:
+            bi_path = Path("/data", "bundles", name, text["source_filename"])
+            if copy_from_remote(bi_path, bundle_dir):
+                return bundle_path
+        elif bundle_path.exists():
+            return bundle_path
+    return None
+
+
+def unzip_to_local(source, destination):
+    if not Path(source).exists():
+        sys.exit("Zipped file {} does not exist".format(source))
+    if not Path(destination).exists():
+        os.makedirs(destination, exist_ok=True)
+    with ZipFile(source, "r") as z:
+        z.extractall(destination)
+
+
+def main(args):
+    global UNZIPPED_BUNDLES_DIR
+    text = text_version(text_id=args.text_id, dbl_id=args.dbl_id)
+    if text is None:
+        sys.exit("Text version not found for text_id={} or dbl_id".format(
+            args.text_id, args.dbl_id))
+    bundle_zip_path = get_usx_zip(text, args.force)
+    if bundle_zip_path is None or not bundle_zip_path.exists():
+        sys.exit("Failed to get bundle")
+    bundle_unzip_path = Path(UNZIPPED_BUNDLES_DIR, 
+        bundle_zip_path.parent.stem, 
+        bundle_zip_path.stem)
+    if not bundle_unzip_path.exists() or args.force:
+        unzip_to_local(bundle_zip_path, bundle_unzip_path)
+    usx_dir = Path(bundle_unzip_path, "release", "USX_1")
+    if usx_dir.exists() and args.usfm is not None and args.open:
+        usx_filepath = Path(usx_dir, "{}.usx".format(args.usfm))
+        if usx_filepath.exists():
+            print("Opening {}".format(usx_filepath))
+            open_with_editor(usx_filepath, args.editor)
+    elif args.usfm is None and args.open:
+        sys.exit("USFM code not specified (Unable to open file)")
+    print("Complete")
+        
+
+if __name__ == "__main__":
+    try:
+        parser = ArgumentParser("Get USX file(s) for a bible version")
+        parser.add_argument("-t", "--text_id", type=int)
+        parser.add_argument("--usfm")
+        parser.add_argument("-d", "--dbl_id")
+        parser.add_argument("-o", "--open", action="store_true")
+        parser.add_argument("-e", "--editor", choices=["code", "idea"], default="code")
+        parser.add_argument("-f", "--force", action="store_true")
+        main(parser.parse_args())
+    finally:
+        if PG_CONN is not None:
+            PG_CONN.close()
