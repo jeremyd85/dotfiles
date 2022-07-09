@@ -23,7 +23,6 @@ lutris
 steam
 xclip
 python3-venv
-flatpak
 snapd
 wget
 cargo
@@ -31,3 +30,7 @@ openjdk-18-jdk
 rclone
 openjfx
 gradle
+python-pip
+python3-pip
+make
+
