@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
 echo "Before shell reset"
-eval $SHELL
+USER_HOME=$(eval echo ~${SUDO_USER})
+echo ${USER_HOME}
 echo "After shell reset"

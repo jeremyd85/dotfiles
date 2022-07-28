@@ -44,7 +44,7 @@ install_packages() {
 setup_zshrc() {
     if [ ! -L $HOME/.zshrc ] ; then
         echo "Creating symlink for .zshrc"
-        ln -shf $MAC_DIR/.zshrc.symlink $HOME/.zshrc
+        ln -snf $MAC_DIR/.zshrc.symlink $HOME/.zshrc
     fi
 }
 
@@ -57,7 +57,7 @@ setup_bin() {
         local bin_file="$HOME/bin/$(basename $file)"
         if [ ! -L $bin_file ] && [ -x $file ] ; then
             echo "Creating symbolic link for $(basename $file)"
-            ln -shf $file $bin_file
+            ln -snf $file $bin_file
         fi
     done
 }
@@ -70,13 +70,13 @@ setup_dropbox_movies() {
         mkdir $HOME/Dropbox/Videos
     fi
     if [ ! -L $HOME/Movies ] ; then
-        ln -shf $HOME/Dropbox/Videos $HOME/Movies
+        ln -snf $HOME/Dropbox/Videos $HOME/Movies
     fi
 }
 
 link_self() {
     if [ ! -L $HOME/bin/sysinit ] ; then
-        ln -shf $MAC_DIR/init.sh $HOME/bin/sysinit
+        ln -snf $MAC_DIR/init.sh $HOME/bin/sysinit
     fi
 }
 
@@ -86,7 +86,7 @@ setup_java() {
     local mac_java="/Library/Java/JavaVirtualMachines"
     if [ ! -L "$mac_java/$openjdk_file" ] ; then
         echo "Setting up java"
-        sudo ln -shf "$install_dir/$openjdk_file" "$mac_java/$openjdk_file"
+        sudo ln -snf "$install_dir/$openjdk_file" "$mac_java/$openjdk_file"
     fi
 }
 

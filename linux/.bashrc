@@ -130,3 +130,10 @@ if [ -d "$HOME/.pyenv" ] ; then
     export PYENV_ROOT="$HOME/.pyenv"
     add_path "$PYENV_ROOT/bin"
 fi
+
+if [ ! -d "$(pyenv root)/plugins/pyenv-virtualenv" ] ; then
+    eval "$(pyenv virtualenv-init -)"
+fi
+
+add_path "$HOME/bin/cellranger-atac-2.1.0"
+add_path "$HOME/bin/cellranger-7.0.0"
